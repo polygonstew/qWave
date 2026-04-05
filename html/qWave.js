@@ -62,7 +62,30 @@ let selIdx = -1;         // selected queue item
 let activeFeedId = null; // which feed panel is showing
 
 const audio = id('audio');
+// ── DYNAMICS COMPRESSOR (ad limiter) ─────────────────────────────────
+let _audioCtx, _compressor, _gainNode, _srcNode;
 
+function initCompressor() {
+  if (_audioCtx) { _audioCtx.resume(); return; } // only init once
+  _audioCtx    = new AudioContext();
+  _srcNode     = _audioCtx.createMediaElementSource(audio);
+  _compressor  = _audioCtx.createDynamicsCompressor();
+  _gainNode    = _audioCtx.createGain();
+
+  // Compressor settings — tuned for "ad limiter" behavior
+  _compressor.threshold.value = -24;  // dB: starts compressing above this level
+  _compressor.knee.value      =  6;   // dB: soft transition into compression
+  _compressor.ratio.value     = 12;   // 12:1 — aggressive clamp on peaks
+  _compressor.attack.value    =  0.003; // seconds — reacts in 3ms (fast)
+  _compressor.release.value   =  0.5;  // seconds — recovers over 0.5s (gentle)
+
+  _gainNode.gain.value = 1.1; // slight makeup gain to compensate for ducking
+
+  // Chain: audio element → compressor → makeup gain → speakers
+  _srcNode.connect(_compressor);
+  _compressor.connect(_gainNode);
+  _gainNode.connect(_audioCtx.destination);
+}
 // ══════════════════════════════════════════════════════════════
 //  BLACKOUT
 // ══════════════════════════════════════════════════════════════
@@ -447,6 +470,7 @@ function moveDown() {
 //  PLAYBACK
 // ══════════════════════════════════════════════════════════════
 function playAt(i) {
+  initCompressor();
   if (i < 0 || i >= queue.length) return;
   const item = queue[i];
   if (!item.url) { toast('No audio URL — skipping'); setTimeout(nextTrack, 800); return; }
@@ -462,6 +486,7 @@ function playAt(i) {
 }
 
 function togglePlay() {
+  initCompressor();
   if (audio.paused) {
     if (!audio.src) { if (queue.length) playAt(0); return; }
     audio.play().catch(() => toast('Playback error'));
