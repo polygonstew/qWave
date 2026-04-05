@@ -66,25 +66,42 @@ const audio = id('audio');
 let _audioCtx, _compressor, _gainNode, _srcNode;
 
 function initCompressor() {
-  if (_audioCtx) { _audioCtx.resume(); return; } // only init once
-  _audioCtx    = new AudioContext();
-  _srcNode     = _audioCtx.createMediaElementSource(audio);
-  _compressor  = _audioCtx.createDynamicsCompressor();
-  _gainNode    = _audioCtx.createGain();
+  if (_audioCtx) {
+    // Already set up — just make sure context isn't suspended
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    return;
+  }
+  try {
+    _audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+    _srcNode    = _audioCtx.createMediaElementSource(audio);
+    _compressor = _audioCtx.createDynamicsCompressor();
+    _gainNode   = _audioCtx.createGain();
 
-  // Compressor settings — tuned for "ad limiter" behavior
-  _compressor.threshold.value = -24;  // dB: starts compressing above this level
-  _compressor.knee.value      =  6;   // dB: soft transition into compression
-  _compressor.ratio.value     = 12;   // 12:1 — aggressive clamp on peaks
-  _compressor.attack.value    =  0.003; // seconds — reacts in 3ms (fast)
-  _compressor.release.value   =  0.5;  // seconds — recovers over 0.5s (gentle)
+    _compressor.threshold.value = -24;
+    _compressor.knee.value      =  6;
+    _compressor.ratio.value     = 12;
+    _compressor.attack.value    =  0.003;
+    _compressor.release.value   =  0.5;
+    _gainNode.gain.value        =  1.1;
 
-  _gainNode.gain.value = 1.1; // slight makeup gain to compensate for ducking
+    _srcNode.connect(_compressor);
+    _compressor.connect(_gainNode);
+    _gainNode.connect(_audioCtx.destination);
 
-  // Chain: audio element → compressor → makeup gain → speakers
-  _srcNode.connect(_compressor);
-  _compressor.connect(_gainNode);
-  _gainNode.connect(_audioCtx.destination);
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  } catch(e) {
+    console.warn('Web Audio init failed, falling back to direct playback:', e);
+    _audioCtx = null; // flag so we don't retry broken state
+  }
+}
+
+function resumeAndPlay() {
+  const doPlay = () => audio.play().catch(() => toast('Tap ▶ to start'));
+  if (_audioCtx && _audioCtx.state === 'suspended') {
+    _audioCtx.resume().then(doPlay);
+  } else {
+    doPlay();
+  }
 }
 // ══════════════════════════════════════════════════════════════
 //  BLACKOUT
@@ -328,6 +345,8 @@ function renderEpisodes(items) {
       </div>
     </div>`;
   }).join('');
+  el.innerHTML = items.map( ... ).join('');
+  el.querySelectorAll('.ep-row').forEach((row, i) => attachEpisodeDrag(row, i)); // ← ADD
 }
 
 function addEpToQ(e, i) {
@@ -398,6 +417,8 @@ function renderQueue() {
       <button class="q-del" onclick="removeQ(event,${i})">✕</button>
     </div>`;
   }).join('');
+  el.innerHTML = queue.map( ... ).join('');
+  el.querySelectorAll('.q-row').forEach((row, i) => attachQueueDrag(row, i)); // ← ADD
   // Scroll current into view
   if (curIdx >= 0) {
     const rows = el.querySelectorAll('.q-row');
@@ -470,14 +491,14 @@ function moveDown() {
 //  PLAYBACK
 // ══════════════════════════════════════════════════════════════
 function playAt(i) {
-  initCompressor();
   if (i < 0 || i >= queue.length) return;
   const item = queue[i];
   if (!item.url) { toast('No audio URL — skipping'); setTimeout(nextTrack, 800); return; }
+  //initCompressor();
   curIdx = i;
   audio.src = item.url;
   audio.load();
-  audio.play().catch(() => toast('Click ▶ to start (autoplay blocked)'));
+  resumeAndPlay();
   updatePlayerUI();
   renderQueue();
   const f = feeds.find(x => x.id === activeFeedId);
@@ -486,7 +507,6 @@ function playAt(i) {
 }
 
 function togglePlay() {
-  initCompressor();
   if (audio.paused) {
     if (!audio.src) { if (queue.length) playAt(0); return; }
     audio.play().catch(() => toast('Playback error'));
@@ -687,7 +707,224 @@ document.addEventListener('drop', async e => {
     parseFeed(txt, file.name.replace(/\.[^.]+$/,''), '__local__:'+file.name);
   }
 });
+// ══════════════════════════════════════════════════════════════
+//  DRAG & DROP — Episodes → Queue  +  Queue reorder
+//  Works with mouse (HTML5 DnD) AND touch (pointer events)
+// ══════════════════════════════════════════════════════════════
 
+// ── shared drag state ─────────────────────────────────────────
+const drag = {
+  type: null,      // 'episode' | 'queue'
+  index: null,     // source index
+  ghost: null,     // floating clone element
+  overIdx: null,   // queue row we're hovering over
+};
+
+// ── ghost element for touch drag ──────────────────────────────
+function createGhost(sourceEl, clientX, clientY) {
+  const g = sourceEl.cloneNode(true);
+  const r = sourceEl.getBoundingClientRect();
+  Object.assign(g.style, {
+    position: 'fixed',
+    left: r.left + 'px',
+    top:  r.top  + 'px',
+    width: r.width + 'px',
+    pointerEvents: 'none',
+    opacity: '0.75',
+    zIndex: '9998',
+    background: 'var(--bg3)',
+    border: '1px solid var(--amber)',
+    transform: 'scale(1.03)',
+    transition: 'none',
+    boxShadow: '0 8px 24px rgba(0,0,0,.6)',
+  });
+  document.body.appendChild(g);
+  drag.ghost = g;
+  drag.offX  = clientX - r.left;
+  drag.offY  = clientY - r.top;
+}
+
+function moveGhost(clientX, clientY) {
+  if (!drag.ghost) return;
+  drag.ghost.style.left = (clientX - drag.offX) + 'px';
+  drag.ghost.style.top  = (clientY - drag.offY) + 'px';
+}
+
+function removeGhost() {
+  drag.ghost?.remove();
+  drag.ghost = null;
+}
+
+// ── highlight a queue drop target ────────────────────────────
+function highlightQRow(idx) {
+  document.querySelectorAll('.q-row').forEach((r, i) => {
+    r.style.borderTop = i === idx ? '2px solid var(--amber)' : '';
+  });
+}
+function clearQHighlight() {
+  document.querySelectorAll('.q-row').forEach(r => r.style.borderTop = '');
+}
+
+// ── find queue row index from a y coordinate ──────────────────
+function qRowAtY(y) {
+  const rows = [...document.querySelectorAll('.q-row')];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i].getBoundingClientRect();
+    if (y < r.bottom) return i;
+  }
+  return rows.length; // drop at end
+}
+
+// ── perform the drop ──────────────────────────────────────────
+function finishDrop(targetIdx) {
+  clearQHighlight();
+  if (drag.type === 'episode') {
+    // Add episode at position
+    const f = feeds.find(x => x.id === activeFeedId);
+    if (!f) return;
+    const item = f.items[drag.index];
+    if (!item) return;
+    const alreadyAt = queue.findIndex(q => q.url === item.url && q.title === item.title);
+    if (alreadyAt >= 0) { toast('Already in queue'); return; }
+    const ins = Math.min(targetIdx, queue.length);
+    queue.splice(ins, 0, { ...item });
+    if (curIdx >= ins) curIdx++;
+  } else if (drag.type === 'queue') {
+    // Reorder within queue
+    const from = drag.index;
+    const to   = Math.min(targetIdx, queue.length - 1);
+    if (from === to) return;
+    const [moved] = queue.splice(from, 1);
+    queue.splice(to, 0, moved);
+    if (curIdx === from)      curIdx = to;
+    else if (from < curIdx && to >= curIdx) curIdx--;
+    else if (from > curIdx && to <= curIdx) curIdx++;
+  }
+  renderQueue();
+  const f = feeds.find(x => x.id === activeFeedId);
+  if (f) renderEpisodes(f.items);
+  saveState();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  EPISODE LIST — drag out to queue (pointer events, works on touch)
+// ══════════════════════════════════════════════════════════════
+function attachEpisodeDrag(rowEl, epIndex) {
+  // Desktop HTML5 drag
+  rowEl.setAttribute('draggable', 'true');
+  rowEl.addEventListener('dragstart', e => {
+    drag.type  = 'episode';
+    drag.index = epIndex;
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', String(epIndex));
+    rowEl.style.opacity = '0.5';
+  });
+  rowEl.addEventListener('dragend', () => { rowEl.style.opacity = ''; });
+
+  // Touch / pointer drag
+  rowEl.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return; // let HTML5 DnD handle mouse
+    drag.type  = 'episode';
+    drag.index = epIndex;
+    createGhost(rowEl, e.clientX, e.clientY);
+    rowEl.setPointerCapture(e.pointerId);
+  }, { passive: true });
+
+  rowEl.addEventListener('pointermove', e => {
+    if (drag.type !== 'episode' || !drag.ghost) return;
+    moveGhost(e.clientX, e.clientY);
+    const idx = qRowAtY(e.clientY);
+    if (idx !== drag.overIdx) { drag.overIdx = idx; highlightQRow(idx); }
+  }, { passive: true });
+
+  rowEl.addEventListener('pointerup', e => {
+    if (drag.type !== 'episode' || !drag.ghost) return;
+    removeGhost();
+    const idx = qRowAtY(e.clientY);
+    finishDrop(idx);
+    drag.type = null; drag.index = null; drag.overIdx = null;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  QUEUE LIST — drag to reorder (pointer events)
+// ══════════════════════════════════════════════════════════════
+function attachQueueDrag(rowEl, qIndex) {
+  // Desktop HTML5 drag
+  rowEl.setAttribute('draggable', 'true');
+  rowEl.addEventListener('dragstart', e => {
+    drag.type  = 'queue';
+    drag.index = qIndex;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(qIndex));
+    rowEl.style.opacity = '0.4';
+  });
+  rowEl.addEventListener('dragend', () => { rowEl.style.opacity = ''; clearQHighlight(); });
+
+  // Touch / pointer drag
+  rowEl.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return;
+    drag.type  = 'queue';
+    drag.index = qIndex;
+    createGhost(rowEl, e.clientX, e.clientY);
+    rowEl.setPointerCapture(e.pointerId);
+  }, { passive: true });
+
+  rowEl.addEventListener('pointermove', e => {
+    if (drag.type !== 'queue' || !drag.ghost) return;
+    moveGhost(e.clientX, e.clientY);
+    const idx = qRowAtY(e.clientY);
+    if (idx !== drag.overIdx) { drag.overIdx = idx; highlightQRow(idx); }
+  }, { passive: true });
+
+  rowEl.addEventListener('pointerup', e => {
+    if (drag.type !== 'queue' || !drag.ghost) return;
+    removeGhost();
+    const idx = qRowAtY(e.clientY);
+    finishDrop(idx);
+    drag.type = null; drag.index = null; drag.overIdx = null;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  QUEUE DROP ZONE — wire up the queue container to accept drops
+// ══════════════════════════════════════════════════════════════
+const qListEl = id('qList');
+
+qListEl.addEventListener('dragover', e => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = drag.type === 'queue' ? 'move' : 'copy';
+  const idx = qRowAtY(e.clientY);
+  if (idx !== drag.overIdx) { drag.overIdx = idx; highlightQRow(idx); }
+});
+
+qListEl.addEventListener('dragleave', e => {
+  if (!qListEl.contains(e.relatedTarget)) clearQHighlight();
+});
+
+qListEl.addEventListener('drop', e => {
+  e.preventDefault();
+  const idx = qRowAtY(e.clientY);
+  finishDrop(idx);
+  drag.type = null; drag.index = null; drag.overIdx = null;
+});
+
+// ══════════════════════════════════════════════════════════════
+//  PATCH renderEpisodes & renderQueue to attach drag handlers
+//  after each render — add one line at the end of each function
+// ══════════════════════════════════════════════════════════════
+
+// Inside renderEpisodes(), find this closing line:
+//   el.innerHTML = items.map(...).join('');
+// ADD this right after it:
+//
+//   el.querySelectorAll('.ep-row').forEach((row, i) => attachEpisodeDrag(row, i));
+//
+// Inside renderQueue(), find this closing line:
+//   el.innerHTML = queue.map(...).join('');
+// ADD this right after it:
+//
+//   el.querySelectorAll('.q-row').forEach((row, i) => attachQueueDrag(row, i));
 // ══════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════
