@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Roll - Node-Based RPG Tracker</title>
+    <link id="google-font" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --panel-bg: #1e1e1e;
+            --accent-color: #00ffcc;
+            --die-color: #ffffff;
+            --font-family: 'Share Tech Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: var(--panel-bg);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
+        button, select, input[type="text"], input[type="number"] {
+            background: var(--panel-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 12px;
+            cursor: pointer;
+            font-family: var(--font-family);
+            border-radius: 4px;
+            outline: none;
+        }
+        button:hover { background: var(--accent-color); color: #000; }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .main-content { flex-direction: row; }
+        }
+
+        /* 3D Dice Section */
+        .dice-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-right: 1px solid #333;
+        }
+
+        .scene {
+            width: 100px; height: 100px;
+            perspective: 400px;
+            margin-bottom: 30px;
+        }
+
+        .cube {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: translateZ(-50px);
+            transition: transform 0.5s;
+        }
+
+        .cube.rolling {
+            animation: rollDie 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .cube__face {
+            position: absolute;
+            width: 100px; height: 100px;
+            background: var(--die-color);
+            border: 2px solid var(--accent-color);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 2em; font-weight: bold; color: #000;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .cube__face--front  { transform: rotateY(  0deg) translateZ(50px); }
+        .cube__face--right  { transform: rotateY( 90deg) translateZ(50px); }
+        .cube__face--back   { transform: rotateY(180deg) translateZ(50px); }
+        .cube__face--left   { transform: rotateY(-90deg) translateZ(50px); }
+        .cube__face--top    { transform: rotateX( 90deg) translateZ(50px); }
+        .cube__face--bottom { transform: rotateX(-90deg) translateZ(50px); }
+
+        @keyframes rollDie {
+            0% { transform: translateZ(-50px) rotateX(0deg) rotateY(0deg); }
+            50% { transform: translateZ(-50px) rotateX(720deg) rotateY(360deg); }
+            100% { transform: translateZ(-50px) rotateX(1080deg) rotateY(720deg); }
+        }
+
+        .die-buttons {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;
+        }
+
+        .modifier-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+
+        /* Nodes Section */
+        .nodes-section {
+            flex: 1.5;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .node-header {
+            display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;
+        }
+
+        .node-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .node-card {
+            background: var(--panel-bg);
+            border-left: 4px solid var(--node-color, var(--accent-color));
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .node-card input[type="text"] {
+            width: 100%; border: none; background: transparent; 
+            font-size: 1.2em; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid #444;
+        }
+
+        .stat-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .stat-controls input { width: 60px; text-align: center; }
+
+        .progress-bar {
+            width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: var(--node-color, var(--accent-color));
+            width: 100%; transition: width 0.3s ease;
+        }
+
+        /* History Section */
+        .history-section {
+            flex: 0.8;
+            background: var(--panel-bg);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #333;
+        }
+
+        #history-list { list-style: none; margin-top: 15px; }
+        #history-list li {
+            padding: 8px 0; border-bottom: 1px dashed #444;
+            display: flex; justify-content: space-between;
+        }
+        .roll-total { color: var(--accent-color); font-weight: bold; font-size: 1.2em; }
+
+        .settings-panel { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.8em; }
+        input[type="color"] { width: 30px; height: 30px; border: none; cursor: pointer; background: transparent; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>Nexus Roll</h2>
+        <div class="settings-panel">
+            <label>Theme: <select id="theme-select" onchange="changeTheme()">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+            </select></label>
+            <label>Font: <select id="font-select" onchange="changeFont()">
+                <option value="Share Tech Mono">Terminal</option>
+                <option value="Roboto">Modern</option>
+                <option value="Cinzel">Fantasy</option>
+            </select></label>
+            <label>BG <input type="color" id="bg-color" value="#121212" onchange="updateColors()"></label>
+            <label>Accent <input type="color" id="accent-color" value="#00ffcc" onchange="updateColors()"></label>
+            <label>Die <input type="color" id="die-color" value="#ffffff" onchange="updateColors()"></label>
+            <label>Hotkey: <input type="text" id="hotkey" value="Space" size="4" readonly onclick="setHotkey(this)"></label>
+            <button onclick="saveSession()">Save Session</button>
+            <button onclick="clearSession()">Clear</button>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="dice-section">
+            <div class="scene">
+                <div class="cube" id="cube">
+                    <div class="cube__face cube__face--front" id="die-face">20</div>
+                    <div class="cube__face cube__face--right">D</div>
+                    <div class="cube__face cube__face--back">I</div>
+                    <div class="cube__face cube__face--left">C</div>
+                    <div class="cube__face cube__face--top">E</div>
+                    <div class="cube__face cube__face--bottom">!</div>
+                </div>
+            </div>
+
+            <div class="modifier-box">
+                <label>Qty: <input type="number" id="die-qty" value="1" min="1" max="100"></label>
+                <label>Mod (+/-): <input type="number" id="die-mod" value="0"></label>
+                <label>Mult (x): <input type="number" id="die-mult" value="1"></label>
+            </div>
+
+            <div class="die-buttons">
+                <button onclick="roll(4)">D4</button>
+                <button onclick="roll(6)">D6</button>
+                <button onclick="roll(8)">D8</button>
+                <button onclick="roll(10)">D10</button>
+                <button onclick="roll(12)">D12</button>
+                <button onclick="roll(20)">D20</button>
+                <button onclick="roll(100)">D100</button>
+            </div>
+            <p style="font-size: 0.8em; color: #888;">Press <span id="hotkey-display">Space</span> to roll last die</p>
+        </div>
+
+        <div class="nodes-section">
+            <div class="node-header">
+                <h3>Vitals & Nodes</h3>
+                <button onclick="addNode()">+ Add Node</button>
+            </div>
+            <div class="node-grid" id="node-container">
+                </div>
+        </div>
+
+        <div class="history-section">
+            <h3>Record</h3>
+            <ul id="history-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let lastDie = 20;
+        let rollHotkey = " ";
+        let nodes = [];
+
+        // --- Core Roll Logic ---
+        function roll(sides) {
+            lastDie = sides;
+            const qty = parseInt(document.getElementById('die-qty').value) || 1;
+            const mod = parseInt(document.getElementById('die-mod').value) || 0;
+            const mult = parseFloat(document.getElementById('die-mult').value) || 1;
+
+            const cube = document.getElementById('cube');
+            cube.classList.remove('rolling');
+            void cube.offsetWidth; // Trigger reflow
+            cube.classList.add('rolling');
+
+            setTimeout(() => {
+                let totalRaw = 0;
+                let rolls = [];
+                for(let i=0; i<qty; i++){
+                    const r = Math.floor(Math.random() * sides) + 1;
+                    rolls.push(r);
+                    totalRaw += r;
+                }
+
+                const finalTotal = Math.floor((totalRaw + mod) * mult);
+                document.getElementById('die-face').innerText = rolls[0]; // Show first die on cube
+                
+                logRoll(sides, qty, mod, mult, rolls, finalTotal);
+                cube.classList.remove('rolling');
+            }, 800); // Matches CSS animation time
+        }
+
+        function logRoll(sides, qty, mod, mult, rolls, total) {
+            const list = document.getElementById('history-list');
+            const li = document.createElement('li');
+            
+            let expression = `${qty}d${sides} [${rolls.join(',')}]`;
+            if(mod !== 0) expression += ` ${mod > 0 ? '+' : ''}${mod}`;
+            if(mult !== 1) expression += ` x${mult}`;
+
+            li.innerHTML = `<span>${expression}</span> <span class="roll-total">${total}</span>`;
+            list.prepend(li);
+            saveSession();
+        }
+
+        // --- Hotkeys ---
+        function setHotkey(inputEl) {
+            inputEl.value = "Press key...";
+            const handler = function(e) {
+                rollHotkey = e.key;
+                inputEl.value = e.key === " " ? "Space" : e.key;
+                document.getElementById('hotkey-display').innerText = inputEl.value;
+                window.removeEventListener('keydown', handler);
+                saveSession();
+            };
+            window.addEventListener('keydown', handler);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if(e.key === rollHotkey && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                roll(lastDie);
+            }
+        });
+
+        // --- Node System ---
+        function addNode(name = "New Node", current = 100, max = 100, color = "#bb00ff") {
+            const id = Date.now() + Math.random();
+            nodes.push({ id, name, current, max, color });
+            renderNodes();
+            saveSession();
+        }
+
+        function updateNode(id, field, value) {
+            const node = nodes.find(n => n.id === id);
+            if(node) {
+                node[field] = value;
+                if(field === 'current' || field === 'max') {
+                    if(node.current > node.max) node.current = node.max;
+                    if(node.current < 0) node.current = 0;
+                }
+                renderNodes();
+                saveSession();
+            }
+        }
+
+        function deleteNode(id) {
+            nodes = nodes.filter(n => n.id !== id);
+            renderNodes();
+            saveSession();
+        }
+
+        function renderNodes() {
+            const container = document.getElementById('node-container');
+            container.innerHTML = '';
+            nodes.forEach(node => {
+                const pct = Math.max(0, Math.min(100, (node.current / node.max) * 100));
+                
+                const card = document.createElement('div');
+                card.className = 'node-card';
+                card.style.setProperty('--node-color', node.color);
+                
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between;">
+                        <input type="text" value="${node.name}" onchange="updateNode(${node.id}, 'name', this.value)">
+                        <input type="color" value="${node.color}" onchange="updateNode(${node.id}, 'color', this.value)" style="width:25px; height:25px; padding:0; border:none;">
+                    </div>
+                    <div class="stat-controls">
+                        <input type="number" value="${node.current}" onchange="updateNode(${node.id}, 'current', Number(this.value))">
+                        <span>/</span>
+                        <input type="number" value="${node.max}" onchange="updateNode(${node.id}, 'max', Number(this.value))">
+                        <button onclick="deleteNode(${node.id})" style="padding: 4px; font-size: 0.8em; border-color: red;">X</button>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- Theming & Settings ---
+        function changeTheme() {
+            const theme = document.getElementById('theme-select').value;
+            const root = document.documentElement;
+            if(theme === 'light') {
+                root.style.setProperty('--bg-color', '#f0f0f0');
+                root.style.setProperty('--panel-bg', '#ffffff');
+                root.style.setProperty('--text-color', '#121212');
+            } else {
+                root.style.setProperty('--bg-color', '#121212');
+                root.style.setProperty('--panel-bg', '#1e1e1e');
+                root.style.setProperty('--text-color', '#e0e0e0');
+            }
+            saveSession();
+        }
+
+        function updateColors() {
+            const root = document.documentElement;
+            root.style.setProperty('--bg-color', document.getElementById('bg-color').value);
+            root.style.setProperty('--accent-color', document.getElementById('accent-color').value);
+            root.style.setProperty('--die-color', document.getElementById('die-color').value);
+            saveSession();
+        }
+
+        function changeFont() {
+            const font = document.getElementById('font-select').value;
+            const fontLink = document.getElementById('google-font');
+            fontLink.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}&display=swap`;
+            document.documentElement.style.setProperty('--font-family', `'${font}', sans-serif`);
+            saveSession();
+        }
+
+        // --- Save/Load Session ---
+        function saveSession() {
+            const settings = {
+                theme: document.getElementById('theme-select').value,
+                font: document.getElementById('font-select').value,
+                bg: document.getElementById('bg-color').value,
+                accent: document.getElementById('accent-color').value,
+                die: document.getElementById('die-color').value,
+                hotkey: document.getElementById('hotkey').value,
+                lastDie: lastDie
+            };
+            const historyHTML = document.getElementById('history-list').innerHTML;
+            
+            localStorage.setItem('nexusRollNodes', JSON.stringify(nodes));
+            localStorage.setItem('nexusRollSettings', JSON.stringify(settings));
+            localStorage.setItem('nexusRollHistory', historyHTML);
+        }
+
+        function loadSession() {
+            const savedNodes = localStorage.getItem('nexusRollNodes');
+            if(savedNodes) nodes = JSON.parse(savedNodes);
+            else {
+                // Default Starting Nodes
+                addNode("HP", 100, 100, "#ff3333");
+                addNode("MP", 50, 50, "#3399ff");
+                addNode("Sanity (Lovecraft)", 100, 100, "#00ffcc");
+            }
+            renderNodes();
+
+            const savedSettings = localStorage.getItem('nexusRollSettings');
+            if(savedSettings) {
+                const s = JSON.parse(savedSettings);
+                document.getElementById('theme-select').value = s.theme;
+                document.getElementById('font-select').value = s.font;
+                document.getElementById('bg-color').value = s.bg;
+                document.getElementById('accent-color').value = s.accent;
+                document.getElementById('die-color').value = s.die;
+                
+                document.getElementById('hotkey').value = s.hotkey;
+                rollHotkey = s.hotkey === "Space" ? " " : s.hotkey;
+                document.getElementById('hotkey-display').innerText = s.hotkey;
+                lastDie = s.lastDie;
+
+                changeTheme();
+                changeFont();
+                updateColors();
+            }
+
+            const historyHTML = localStorage.getItem('nexusRollHistory');
+            if(historyHTML) document.getElementById('history-list').innerHTML = historyHTML;
+        }
+
+        function clearSession() {
+            if(confirm("Clear all nodes and history?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Init
+        window.onload = loadSession;
+
+    </script>
+</body>
+</html>
