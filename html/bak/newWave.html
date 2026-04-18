@@ -63,7 +63,7 @@ header{flex:0 0 var(--hdr);height:var(--hdr);background:var(--bg2);border-bottom
 /* INPUTS */
 input[type=url],input[type=text]{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--bright);font-family:var(--mono);font-size:11px;padding:7px 9px;outline:none;transition:border-color .15s;}
 input:focus{border-color:var(--amber);} input::placeholder{color:var(--dim);} input[type=file]{display:none;}
-input[type=range]{-webkit-appearance:none;appearance:none;height:3px;background:var(--bg3);outline:none;cursor:pointer;}
+input[type=range]{-webkit-appearance:none;height:3px;background:var(--bg3);outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--amber);border-radius:50%;}
 select.sort-sel{background:var(--bg3);border:1px solid var(--border);color:var(--dim);font-family:var(--mono);font-size:9px;padding:3px 5px;cursor:pointer;outline:none;flex:1;}
 select.sort-sel:hover,select.sort-sel:focus{border-color:var(--amber);color:var(--amber);}
@@ -75,6 +75,50 @@ select.sort-sel:hover,select.sort-sel:focus{border-color:var(--amber);color:var(
 .drop-zone{border:1px dashed var(--border);padding:8px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer;transition:all .15s;}
 .drop-zone:hover{border-color:var(--amber);color:var(--amber);}
 .or-sep{text-align:center;font-family:var(--mono);font-size:9px;color:var(--dim);}
+
+/* SEARCH PANEL */
+.search-panel{flex:0 0 auto;overflow:hidden;max-height:0;transition:max-height .3s ease;background:var(--bg3);}
+.search-panel.open{max-height:480px;border-bottom:1px solid var(--border);}
+.search-inner{padding:10px;display:flex;flex-direction:column;gap:7px;}
+.search-row{display:flex;gap:6px;}
+.search-row input{flex:1;}
+.search-row button{flex-shrink:0;}
+.search-results{overflow-y:auto;max-height:360px;}
+.sr-card{
+  padding:9px 10px;border-bottom:1px solid var(--border2);
+  display:flex;gap:9px;align-items:flex-start;
+  transition:background .1s;
+}
+.sr-card:hover{background:rgba(255,255,255,.03);}
+.sr-art{
+  width:42px;height:42px;flex-shrink:0;border-radius:3px;
+  background:var(--bg);border:1px solid var(--border);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.sr-art img{width:100%;height:100%;object-fit:cover;display:block;}
+.sr-info{flex:1;min-width:0;}
+.sr-name{font-family:var(--cond);font-weight:600;font-size:13px;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sr-author{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sr-meta{font-family:var(--mono);font-size:9px;color:var(--amber-lo);margin-top:2px;}
+.sr-add{
+  flex-shrink:0;align-self:center;
+  font-family:var(--mono);font-size:9px;
+  background:none;border:1px solid var(--border);
+  color:var(--amber);padding:3px 8px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.sr-add:hover{background:var(--amber);color:#000;border-color:var(--amber);}
+.sr-add:disabled{color:var(--dim);border-color:var(--border2);cursor:default;background:transparent;}
+.sr-none{padding:16px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim);}
+.search-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);}
+.stab{
+  flex:1;padding:5px 0;text-align:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;
+  color:var(--dim);cursor:pointer;border:none;background:transparent;
+  border-bottom:2px solid transparent;transition:all .15s;
+}
+.stab.on{color:var(--amber);border-bottom-color:var(--amber);}
+.stab:hover{color:var(--text);}
 
 /* FEED LIST */
 .feed-row{
@@ -241,18 +285,40 @@ audio{display:none;}
   <div class="panel">
     <div class="ph">
       <span class="pt">// STATIONS &amp; PODS</span>
+      <button class="btn sm" id="findBtn">🔍 FIND</button>
       <button class="btn pri sm" id="addBtn">+ ADD</button>
     </div>
-    <div class="add-form" id="addForm">
-      <div class="add-form-inner">
-        <input type="url" id="urlInput" placeholder="https://feeds.example.com/rss.xml">
-        <button class="btn pri" id="loadUrlBtn" style="width:100%">LOAD URL</button>
-        <div class="or-sep">— or —</div>
-        <label class="drop-zone" for="xmlFile">📂 CLICK TO LOAD XML FILE</label>
-        <input type="file" id="xmlFile" accept=".xml,.rss">
-        <button class="btn sm" id="cancelAddBtn" style="align-self:flex-end">CANCEL</button>
+    <!-- PODCAST SEARCH PANEL -->
+    <div class="search-panel" id="searchPanel">
+      <div class="search-inner">
+        <div class="search-tabs">
+          <button class="stab on" id="tabPodcast">PODCASTS</button>
+          <button class="stab" id="tabURL">BY URL / FILE</button>
+        </div>
+        <!-- Podcast search tab -->
+        <div id="searchTab">
+          <div class="search-row" style="margin-top:4px;">
+            <input type="text" id="searchInput" placeholder="Search podcasts…">
+            <button class="btn sm pri" id="searchGoBtn">GO</button>
+          </div>
+          <div class="search-results" id="searchResults">
+            <div class="sr-none">Type a show name and press GO</div>
+          </div>
+        </div>
+        <!-- URL/File tab (moved from addForm) -->
+        <div id="urlTab" style="display:none;margin-top:4px;">
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <input type="url" id="urlInput" placeholder="https://feeds.example.com/rss.xml">
+            <button class="btn pri" id="loadUrlBtn" style="width:100%">LOAD URL</button>
+            <div class="or-sep">— or —</div>
+            <label class="drop-zone" for="xmlFile">📂 CLICK TO LOAD XML FILE</label>
+            <input type="file" id="xmlFile" accept=".xml,.rss">
+          </div>
+        </div>
+        <button class="btn sm" id="closeFindBtn" style="align-self:flex-end;margin-top:2px;">CLOSE</button>
       </div>
     </div>
+
     <div class="scroll" id="feedList">
       <div class="empty"><div class="empty-ico">📡</div><div class="empty-ttl">No Stations</div><div class="empty-sub">Add an RSS/XML URL<br>or drop a .xml file on the page</div></div>
     </div>
@@ -358,10 +424,14 @@ function enterBlackout(){G('blackout').classList.add('on');}
 function exitBlackout(){G('blackout').classList.remove('on');}
 
 // ─── WIRE STATIC BUTTONS ──────────────────────────────────────────────
-G('addBtn').addEventListener('click',toggleForm);
+G('addBtn').addEventListener('click',function(){openFind('url');});
+G('findBtn').addEventListener('click',function(){openFind('search');});
+G('closeFindBtn').addEventListener('click',closeFind);
+G('tabPodcast').addEventListener('click',function(){switchTab('search');});
+G('tabURL').addEventListener('click',function(){switchTab('url');});
 G('loadUrlBtn').addEventListener('click',doURL);
-G('cancelAddBtn').addEventListener('click',toggleForm);
 G('xmlFile').addEventListener('change',doFile);
+G('searchGoBtn').addEventListener('click',doSearch);
 G('importFile').addEventListener('change',importJSON);
 G('addAllBtn').addEventListener('click',addAll);
 G('clearQBtn').addEventListener('click',clearQ);
@@ -379,11 +449,85 @@ G('prog').addEventListener('click',seek);
 G('sortSel').addEventListener('change',function(){applySort(this.value);});
 G('urlInput').addEventListener('keydown',function(e){if(e.key==='Enter')doURL();});
 
-// ─── ADD FORM ─────────────────────────────────────────────────────────
-function toggleForm(){
-  var f=G('addForm');
-  f.classList.toggle('open');
-  if(f.classList.contains('open'))G('urlInput').focus();
+// ─── SEARCH PANEL ─────────────────────────────────────────────────────
+function openFind(tab){
+  G('searchPanel').classList.add('open');
+  switchTab(tab);
+}
+function closeFind(){
+  G('searchPanel').classList.remove('open');
+}
+function switchTab(tab){
+  var isSearch=tab==='search';
+  G('searchTab').style.display=isSearch?'':'none';
+  G('urlTab').style.display=isSearch?'none':'';
+  G('tabPodcast').classList.toggle('on',isSearch);
+  G('tabURL').classList.toggle('on',!isSearch);
+  if(isSearch) setTimeout(function(){G('searchInput').focus();},50);
+  else setTimeout(function(){G('urlInput').focus();},50);
+}
+
+G('searchInput').addEventListener('keydown',function(e){if(e.key==='Enter')doSearch();});
+G('urlInput').addEventListener('keydown',function(e){if(e.key==='Enter')doURL();});
+
+// ─── ITUNES PODCAST SEARCH ────────────────────────────────────────────
+async function doSearch(){
+  var q=G('searchInput').value.trim();
+  if(!q){toast('Enter a search term');return;}
+  var res=G('searchResults');
+  res.innerHTML='<div class="loading"><div class="spin"></div>SEARCHING…</div>';
+  try{
+    var url='https://itunes.apple.com/search?term='+encodeURIComponent(q)+'&media=podcast&entity=podcast&limit=20';
+    var r=await fetch(url,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var data=await r.json();
+    renderSearchResults(data.results||[]);
+  }catch(e){
+    res.innerHTML='<div class="sr-none">Search failed — check your connection</div>';
+    console.warn(e);
+  }
+}
+
+function renderSearchResults(results){
+  var res=G('searchResults');
+  if(!results.length){res.innerHTML='<div class="sr-none">No podcasts found — try different keywords</div>';return;}
+  res.innerHTML='';
+  results.forEach(function(pod){
+    var name=pod.collectionName||pod.trackName||'Unknown';
+    var author=pod.artistName||'';
+    var feedUrl=pod.feedUrl||'';
+    var art=pod.artworkUrl100||pod.artworkUrl60||'';
+    var count=pod.trackCount||0;
+    var genre=pod.primaryGenreName||'';
+    var alreadyAdded=!!feeds.find(function(f){return f.url===feedUrl;});
+
+    var card=document.createElement('div');
+    card.className='sr-card';
+    card.innerHTML=
+      '<div class="sr-art">'+(art?'<img src="'+esc(art)+'" onerror="this.outerHTML=\'🎙\'" loading="lazy">':'🎙')+'</div>'
+      +'<div class="sr-info">'
+      +'<div class="sr-name">'+esc(name)+'</div>'
+      +(author?'<div class="sr-author">'+esc(author)+'</div>':'')
+      +'<div class="sr-meta">'+(count?count+' eps · ':'')+(genre?esc(genre):'')+(feedUrl?'':' · <span style="color:var(--red)">no feed URL</span>')+'</div>'
+      +'</div>'
+      +'<button class="sr-add"'+(alreadyAdded||!feedUrl?' disabled':'')+'>'+( alreadyAdded?'✓ ADDED':'+ ADD')+'</button>';
+
+    if(feedUrl&&!alreadyAdded){
+      var addBtn=card.querySelector('.sr-add');
+      addBtn.addEventListener('click',async function(){
+        addBtn.disabled=true;addBtn.textContent='…';
+        try{
+          var txt=await fetchXML(feedUrl);
+          parseFeed(txt,name,feedUrl);
+          addBtn.textContent='✓ ADDED';
+        }catch(e){
+          addBtn.disabled=false;addBtn.textContent='+ ADD';
+          toast('Failed to load feed: '+e.message);
+        }
+      });
+    }
+    res.appendChild(card);
+  });
 }
 
 // ─── PROXIED FETCH ─────────────────────────────────────────────────────
@@ -411,7 +555,7 @@ async function doURL(){
   var url=G('urlInput').value.trim();
   if(!url){toast('Enter a URL first');return;}
   G('urlInput').value='';
-  toggleForm();
+  closeFind();
   G('epList').innerHTML='<div class="loading"><div class="spin"></div>FETCHING FEED…</div>';
   try{var txt=await fetchXML(url);parseFeed(txt,url,url);}
   catch(e){
@@ -424,7 +568,7 @@ function doFile(evt){
   var file=evt.target.files[0];if(!file)return;
   evt.target.value='';
   var r=new FileReader();
-  r.onload=function(e){toggleForm();parseFeed(e.target.result,file.name.replace(/\.[^.]+$/,''),'__local__:'+file.name);};
+  r.onload=function(e){closeFind();parseFeed(e.target.result,file.name.replace(/\.[^.]+$/,''),'__local__:'+file.name);};
   r.readAsText(file);
 }
 
@@ -757,16 +901,20 @@ function renderEpisodes(items){
       +'</div>';
 
     // buttons
-    row.querySelector('.ep-add').addEventListener('click',function(e){e.stopPropagation();addEpToQ(i);});
-    row.querySelector('.ep-play').addEventListener('click',function(e){e.stopPropagation();playNow(i);});
+    var addBtn=row.querySelector('.ep-add');
+    var playBtn=row.querySelector('.ep-play');
+    if(addBtn)addBtn.addEventListener('click',function(e){e.stopPropagation();addEpToQ(i);});
+    if(playBtn)playBtn.addEventListener('click',function(e){e.stopPropagation();playNow(i);});
 
     // description tooltip
     if(item.desc){
       var descEl=row.querySelector('.ep-desc');
-      descEl.addEventListener('mouseenter',function(e){
-        tipTimer=setTimeout(function(){showTip(item.title,item.desc,e.clientX,e.clientY);},400);
-      });
-      descEl.addEventListener('mouseleave',function(){clearTimeout(tipTimer);hideTip();});
+      if(descEl){
+        descEl.addEventListener('mouseenter',function(e){
+          tipTimer=setTimeout(function(){showTip(item.title,item.desc,e.clientX,e.clientY);},400);
+        });
+        descEl.addEventListener('mouseleave',function(){clearTimeout(tipTimer);hideTip();});
+      }
       // also show on row hover after a longer delay if no dedicated desc hover
       row.addEventListener('mouseenter',function(e){
         tipTimer=setTimeout(function(){showTip(item.title,item.desc,e.clientX,e.clientY);},800);
@@ -867,7 +1015,8 @@ function renderQueue(){
       +'<div class="q-feed">'+esc(item.feedName||'')+(item.dur?' · '+esc(item.dur):'')+'</div></div>'
       +'<button class="q-del">✕</button>';
 
-    row.querySelector('.q-del').addEventListener('click',function(e){e.stopPropagation();removeQ(i);});
+    var delBtn=row.querySelector('.q-del');
+    if(delBtn)delBtn.addEventListener('click',function(e){e.stopPropagation();removeQ(i);});
     row.addEventListener('click',function(e){if(e.target.classList.contains('q-del'))return;selIdx=i;renderQueue();});
     row.addEventListener('dblclick',function(e){if(e.target.classList.contains('q-del'))return;playAt(i);});
 
@@ -1061,15 +1210,8 @@ function saveState(){try{localStorage.setItem('qw_v4',JSON.stringify({feeds:feed
 function loadState(){
   try{
     var raw=localStorage.getItem('qw_v4');if(!raw)return;
-    var s=JSON.parse(raw);feeds=s.feeds||[];queue=s.queue||[];curIdx=-1;selIdx=-1;updatePlayerUI();
-    currentSort=s.sort||'manual';
-    var sortSel = G('sortSel');
-    if (sortSel && Array.from(sortSel.options).some(opt => opt.value === currentSort)) {
-      sortSel.value = currentSort;
-    } else if (sortSel) {
-      sortSel.value = 'manual';
-      currentSort = 'manual';
-    }
+    var s=JSON.parse(raw);feeds=s.feeds||[];queue=s.queue||[];curIdx=-1;selIdx=-1;
+    currentSort=s.sort||'manual';G('sortSel').value=currentSort;
     activeFeedId=feeds.length?feeds[0].id:null;
     renderFeeds();renderQueue();
     if(activeFeedId){var f=feeds.find(function(x){return x.id===activeFeedId;});if(f){G('epTitle').textContent=f.name;G('addAllBtn').style.display='';renderEpisodes(f.items);}}
