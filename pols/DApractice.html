@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DataAnnotation Practice Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --text: #e8eaf0;
+    --muted: #7a82a0;
+    --good: #2ecc71;
+    --bad: #e74c3c;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-wrap {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .progress-bar-outer {
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 24px 0;
+  }
+
+  /* TASK CARD */
+  .task {
+    display: none;
+    animation: fadeUp 0.4s ease both;
+  }
+  .task.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-header {
+    margin-bottom: 28px;
+  }
+  .task-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .task-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .task-desc {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+    max-width: 620px;
+  }
+
+  /* SCENARIO BOX */
+  .scenario {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .scenario-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .scenario p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  /* RESPONSE CARDS */
+  .responses {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media(max-width:620px){ .responses { grid-template-columns: 1fr; } }
+
+  .response-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .response-card:hover { border-color: var(--accent); }
+  .response-card.selected {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.07);
+  }
+  .response-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .response-card p {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: #c8ccd8;
+  }
+  .check-icon {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.2s;
+  }
+  .response-card.selected .check-icon {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  /* TEXTAREA */
+  .field-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    padding: 16px 18px;
+    resize: vertical;
+    min-height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 6px;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .char-count {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .char-count.warn { color: var(--accent); }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 13px 28px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+  }
+  .btn-primary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  /* FEEDBACK BOX */
+  .feedback {
+    display: none;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-top: 24px;
+    animation: fadeUp 0.35s ease both;
+  }
+  .feedback.show { display: block; }
+  .feedback-header {
+    padding: 14px 20px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .feedback-header.good { background: rgba(46,204,113,0.12); color: var(--good); }
+  .feedback-header.ok   { background: rgba(240,165,0,0.12);  color: var(--accent); }
+  .feedback-header.bad  { background: rgba(231,76,60,0.12);  color: var(--bad); }
+  .feedback-body {
+    padding: 18px 20px;
+  }
+  .feedback-section {
+    margin-bottom: 16px;
+  }
+  .feedback-section:last-child { margin-bottom: 0; }
+  .fb-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .fb-text {
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: #c8ccd8;
+  }
+  .fb-text strong { color: var(--text); }
+  .example-answer {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.86rem;
+    line-height: 1.7;
+    color: #c8ccd8;
+    font-style: italic;
+    margin-top: 8px;
+  }
+
+  /* SCORE PILL */
+  .score-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-left: auto;
+  }
+
+  /* FINAL SCREEN */
+  #screen-final {
+    display: none;
+    text-align: center;
+    padding: 60px 24px;
+    animation: fadeUp 0.5s ease both;
+  }
+  #screen-final.show { display: block; }
+  .final-score-ring {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) 0%, var(--accent2) var(--pct, 70%), var(--surface2) var(--pct, 70%));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+  .final-score-ring::before {
+    content: '';
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: var(--bg);
+    position: absolute;
+  }
+  .final-score-number {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+  .final-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  .final-subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    max-width: 500px;
+    margin: 0 auto 32px;
+  }
+  .final-tips {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: left;
+    max-width: 560px;
+    margin: 0 auto 32px;
+  }
+  .final-tips-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 14px;
+    color: var(--accent);
+  }
+  .tip-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #c8ccd8;
+  }
+  .tip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  /* NAV BUTTONS */
+  .task-nav {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  /* INTRO */
+  #screen-intro {
+    text-align: center;
+    padding: 60px 24px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .intro-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+  .intro-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    line-height: 1.15;
+  }
+  .intro-title span { color: var(--accent); }
+  .intro-sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto 36px;
+  }
+  .intro-cards {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .intro-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-align: left;
+    width: 200px;
+  }
+  .intro-card-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .intro-card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  .intro-card-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DA <span>Practice</span></div>
+  <div class="badge">GENERAL TRACK · 3 TASKS</div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-labels">
+    <span id="prog-label">Not started</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar-outer">
+    <div class="progress-bar-inner" id="prog-bar"></div>
+  </div>
+</div>
+
+<main>
+
+  <!-- INTRO -->
+  <div id="screen-intro">
+    <div class="intro-icon">🎯</div>
+    <div class="intro-title">Practice <span>Assessment</span></div>
+    <p class="intro-sub">This mirrors the real DataAnnotation Starter Assessment. Complete all 3 tasks, then get detailed feedback on exactly what to improve before the real thing.</p>
+    <div class="intro-cards">
+      <div class="intro-card">
+        <div class="intro-card-num">TASK 01</div>
+        <div class="intro-card-title">Response Evaluation</div>
+        <div class="intro-card-desc">Pick the better AI answer and explain your reasoning clearly.</div>
+      </div>
+      <div class="intro-card">
+        <div class="intro-card-num">TASK 02</div>
+        <div class="intro-card-title">Flaw Identification</div>
+        <div class="intro-card-desc">Spot what's wrong with a bad AI response and articulate it.</div>
+      </div>
+      <div class="intro-card">
+        <div class="intro-card-num">TASK 03</div>
+        <div class="intro-card-title">Prompt Writing</div>
+        <div class="intro-card-desc">Write a clear, well-structured prompt for an AI model.</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="startAssessment()">Begin Practice →</button>
+  </div>
+
+  <!-- TASK 1: RESPONSE EVALUATION -->
+  <div class="task" id="task-1">
+    <div class="task-header">
+      <div class="task-tag">Task 01 of 03 · Response Evaluation</div>
+      <div class="task-title">Which AI response is better?</div>
+      <p class="task-desc">A user asked an AI assistant a question. Two responses were generated. Read both carefully, select the one you think is <strong>better</strong>, then explain your reasoning in the text box below. Be specific — vague answers like "it was clearer" won't cut it.</p>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-label">User's Question</div>
+      <p>"Can you explain what inflation is and how it affects everyday people?"</p>
+    </div>
+
+    <div class="responses">
+      <div class="response-card" id="resp-A" onclick="selectResponse('A')">
+        <div class="check-icon" id="check-A">✓</div>
+        <div class="response-label">RESPONSE A</div>
+        <p>Inflation is when prices go up over time. It makes things more expensive so your money doesn't go as far. For example, if a gallon of milk costs $3 today and inflation is 5%, it'll cost $3.15 next year. This hurts people on fixed incomes the most because their income doesn't rise with prices. It also affects savings — money sitting in a low-interest account loses purchasing power. Governments try to control inflation using interest rates.</p>
+      </div>
+      <div class="response-card" id="resp-B" onclick="selectResponse('B')">
+        <div class="check-icon" id="check-B">✓</div>
+        <div class="response-label">RESPONSE B</div>
+        <p>Inflation is a complex macroeconomic phenomenon characterized by a sustained increase in the general price level of goods and services in an economy over a period of time. When the general price level rises, each unit of currency buys fewer goods and services. Consequently, inflation reflects a reduction in the purchasing power per unit of money. It is measured using indexes such as the CPI.</p>
+      </div>
+    </div>
+
+    <div class="field-label">Your Reasoning</div>
+    <textarea id="t1-reasoning" placeholder="Explain why you chose that response. Be specific — mention what the better response does well AND what the worse response gets wrong." oninput="updateChar('t1-reasoning','t1-char', 50)"></textarea>
+    <div class="char-count" id="t1-char">0 / 50 min characters</div>
+
+    <div class="task-nav">
+      <button class="btn btn-primary" id="t1-submit" onclick="submitTask1()" disabled>Submit & See Feedback →</button>
+    </div>
+
+    <div class="feedback" id="t1-feedback"></div>
+  </div>
+
+  <!-- TASK 2: FLAW IDENTIFICATION -->
+  <div class="task" id="task-2">
+    <div class="task-header">
+      <div class="task-tag">Task 02 of 03 · Flaw Identification</div>
+      <div class="task-title">What's wrong with this response?</div>
+      <p class="task-desc">Below is an AI response that has <strong>multiple problems</strong>. Your job is to identify and explain the flaws clearly. Think about accuracy, helpfulness, tone, completeness, and safety.</p>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-label">User's Question</div>
+      <p>"I've been feeling really down lately and having trouble sleeping. What should I do?"</p>
+    </div>
+
+    <div class="scenario" style="border-color: rgba(231,76,60,0.3)">
+      <div class="scenario-label" style="color: var(--bad)">AI RESPONSE TO EVALUATE</div>
+      <p>You're probably just stressed. Try drinking chamomile tea before bed and make sure your room is dark. Most people feel down sometimes — it's totally normal and nothing to worry about. You should also maybe exercise more, eat better, and reduce screen time. If it continues for more than a few weeks, just push through it. People have dealt with way worse. Also try meditating, it cures most mental health stuff pretty easily.</p>
+    </div>
+
+    <div class="field-label">Identify the Flaws</div>
+    <textarea id="t2-flaws" placeholder="List and explain the specific problems with this response. Think about: Is it accurate? Is it helpful? Does it address the real concern? Is anything potentially harmful?" oninput="updateChar('t2-flaws','t2-char', 80)"></textarea>
+    <div class="char-count" id="t2-char">0 / 80 min characters</div>
+
+    <div class="task-nav">
+      <button class="btn btn-primary" id="t2-submit" onclick="submitTask2()" disabled>Submit & See Feedback →</button>
+    </div>
+    <div class="feedback" id="t2-feedback"></div>
+  </div>
+
+  <!-- TASK 3: PROMPT WRITING -->
+  <div class="task" id="task-3">
+    <div class="task-header">
+      <div class="task-tag">Task 03 of 03 · Prompt Writing</div>
+      <div class="task-title">Write a high-quality prompt</div>
+      <p class="task-desc">Write a prompt that you would send to an AI assistant to get a <strong>genuinely useful</strong> response. A good prompt is specific, includes relevant context, defines the desired output, and leaves no room for the AI to misinterpret your intent. Vague prompts produce vague answers.</p>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-label">Your Goal</div>
+      <p>You want an AI to help you write a professional email declining a job offer without burning bridges with the company.</p>
+    </div>
+
+    <div class="field-label">Your Prompt</div>
+    <textarea id="t3-prompt" placeholder="Write your prompt here. Remember: the AI only knows what you tell it. Include context, tone, format requirements, and any constraints." oninput="updateChar('t3-prompt','t3-char', 100)" style="min-height:150px;"></textarea>
+    <div class="char-count" id="t3-char">0 / 100 min characters</div>
+
+    <div class="task-nav">
+      <button class="btn btn-primary" id="t3-submit" onclick="submitTask3()" disabled>Submit & See Feedback →</button>
+    </div>
+    <div class="feedback" id="t3-feedback"></div>
+  </div>
+
+  <!-- FINAL SCREEN -->
+  <div id="screen-final">
+    <div class="final-score-ring" id="score-ring">
+      <div class="final-score-number" id="score-display">—</div>
+    </div>
+    <div class="final-title" id="final-title">Assessment Complete</div>
+    <p class="final-subtitle" id="final-subtitle">Here's what to focus on before you take the real thing.</p>
+    <div class="final-tips" id="final-tips-box"></div>
+    <button class="btn btn-primary" onclick="resetAssessment()">↺ Practice Again</button>
+  </div>
+
+</main>
+
+<script>
+let currentTask = 0;
+let selectedResponse = null;
+let scores = [0, 0, 0];
+
+// ── UTILITIES ──
+function updateChar(taId, countId, min) {
+  const ta = document.getElementById(taId);
+  const ct = document.getElementById(countId);
+  const len = ta.value.trim().length;
+  ct.textContent = `${len} / ${min} min characters`;
+  ct.classList.toggle('warn', len > 0 && len < min);
+
+  // find submit button in same task
+  const taskEl = ta.closest('.task');
+  const btn = taskEl.querySelector('.btn-primary');
+  checkTaskReady(taskEl.id);
+}
+
+function checkTaskReady(taskId) {
+  if (taskId === 'task-1') {
+    const len = document.getElementById('t1-reasoning').value.trim().length;
+    document.getElementById('t1-submit').disabled = !(selectedResponse && len >= 50);
+  } else if (taskId === 'task-2') {
+    const len = document.getElementById('t2-flaws').value.trim().length;
+    document.getElementById('t2-submit').disabled = len < 80;
+  } else if (taskId === 'task-3') {
+    const len = document.getElementById('t3-prompt').value.trim().length;
+    document.getElementById('t3-submit').disabled = len < 100;
+  }
+}
+
+function selectResponse(choice) {
+  selectedResponse = choice;
+  document.getElementById('resp-A').classList.toggle('selected', choice === 'A');
+  document.getElementById('resp-B').classList.toggle('selected', choice === 'B');
+  checkTaskReady('task-1');
+}
+
+function setProgress(step, total) {
+  const pct = Math.round((step / total) * 100);
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  const labels = ['Not started', 'Task 1 of 3', 'Task 2 of 3', 'Task 3 of 3', 'Complete'];
+  document.getElementById('prog-label').textContent = labels[step] || 'Complete';
+}
+
+function showTask(n) {
+  document.querySelectorAll('.task').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-intro').style.display = 'none';
+  document.getElementById('screen-final').classList.remove('show');
+  if (n >= 1 && n <= 3) {
+    document.getElementById('task-' + n).classList.add('active');
+    setProgress(n, 3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  currentTask = n;
+}
+
+function startAssessment() {
+  showTask(1);
+}
+
+// ── TASK 1 ──
+function submitTask1() {
+  const reasoning = document.getElementById('t1-reasoning').value.trim();
+  const correct = selectedResponse === 'A';
+  let score = 0;
+  const r = reasoning.toLowerCase();
+
+  // Score heuristics
+  if (correct) score += 40;
+  const keywords = ['example', 'concrete', 'relatable', 'specific', 'practical', 'fixed income', 'savings', 'purchasing power', 'jargon', 'technical', 'accessible', 'everyday', 'understand'];
+  keywords.forEach(k => { if (r.includes(k)) score += 5; });
+  if (r.length > 150) score += 10;
+  if (r.includes('because') || r.includes('since') || r.includes('whereas')) score += 5;
+  score = Math.min(score, 100);
+  scores[0] = score;
+
+  const tier = score >= 70 ? 'good' : score >= 45 ? 'ok' : 'bad';
+  const icon = tier === 'good' ? '✅' : tier === 'ok' ? '⚠️' : '❌';
+  const label = tier === 'good' ? 'Strong Answer' : tier === 'ok' ? 'Needs More Depth' : 'Needs Improvement';
+
+  const fb = document.getElementById('t1-feedback');
+  fb.innerHTML = `
+    <div class="feedback-header ${tier}">${icon} ${label} <span class="score-pill">Score: ${score}/100</span></div>
+    <div class="feedback-body">
+      <div class="feedback-section">
+        <div class="fb-label">Correct Choice</div>
+        <div class="fb-text"><strong>Response A is better.</strong> It uses a real-world example ($3 milk → $3.15), explains <em>why</em> it matters to ordinary people (fixed incomes, savings), and is written in plain language anyone can understand. Response B is technically accurate but uses jargon ("macroeconomic phenomenon," "CPI") without explanation — it reads like a textbook, not a helpful assistant.</div>
+      </div>
+      <div class="feedback-section">
+        <div class="fb-label">What DataAnnotation Looks For</div>
+        <div class="fb-text">When evaluating responses, always ask: <strong>Does this actually help the person who asked?</strong> A response can be factually correct but still be a poor answer if it's inaccessible, vague, or doesn't address the human's real need. Mention <em>both</em> what's good about your pick and what's bad about the other — reviewers want to see your reasoning, not just your conclusion.</div>
+      </div>
+      <div class="feedback-section">
+        <div class="fb-label">Example of a Strong Explanation</div>
+        <div class="example-answer">"Response A is better because it translates an abstract concept into something concrete — the milk price example makes the impact of inflation immediately understandable. It also addresses who is most affected (people on fixed incomes) and explains the savings implication, which directly answers the 'how it affects everyday people' part of the question. Response B, while technically accurate, relies on economic jargon like 'macroeconomic phenomenon' and 'purchasing power per unit of money' without defining them, making it unhelpful for most users."</div>
+      </div>
+      <div class="task-nav" style="margin-top:18px;">
+        <button class="btn btn-primary" onclick="showTask(2)">Continue to Task 2 →</button>
+      </div>
+    </div>`;
+  fb.classList.add('show');
+  document.getElementById('t1-submit').disabled = true;
+  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── TASK 2 ──
+function submitTask2() {
+  const flaws = document.getElementById('t2-flaws').value.trim();
+  const r = flaws.toLowerCase();
+  let score = 10; // base
+
+  const flawKeywords = [
+    ['dismiss', 'minimiz', 'downplay', 'trivializ', 'nothing to worry', 'just stressed', 'just', 'normal'],
+    ['mental health', 'depression', 'professional', 'doctor', 'therapist', 'seek help', 'medical'],
+    ['push through', 'harmful', 'dangerous', 'worse', 'invalidat'],
+    ['cure', 'inaccurate', 'wrong', 'false', 'meditation'],
+    ['tone', 'empathy', 'compassion', 'cold', 'dismissive', 'unsympathetic'],
+    ['generic', 'vague', 'specific', 'advice'],
+  ];
+  flawKeywords.forEach(group => {
+    if (group.some(k => r.includes(k))) score += 15;
+  });
+  if (r.length > 200) score += 10;
+  score = Math.min(score, 100);
+  scores[1] = score;
+
+  const tier = score >= 70 ? 'good' : score >= 45 ? 'ok' : 'bad';
+  const icon = tier === 'good' ? '✅' : tier === 'ok' ? '⚠️' : '❌';
+  const label = tier === 'good' ? 'Good Catch' : tier === 'ok' ? 'Partial — Keep Digging' : 'Missed Key Issues';
+
+  const fb = document.getElementById('t2-feedback');
+  fb.innerHTML = `
+    <div class="feedback-header ${tier}">${icon} ${label} <span class="score-pill">Score: ${score}/100</span></div>
+    <div class="feedback-body">
+      <div class="feedback-section">
+        <div class="fb-label">The Real Flaws in That Response</div>
+        <div class="fb-text">
+          <strong>1. Dismissiveness / Minimizing</strong> — "nothing to worry about" and "people have dealt with way worse" invalidates the user's feelings and could discourage them from seeking real help.<br><br>
+          <strong>2. Missing a safety referral</strong> — Feeling persistently down and having trouble sleeping can be symptoms of depression or anxiety. A responsible AI should recommend speaking with a doctor or mental health professional, not tell someone to "push through it."<br><br>
+          <strong>3. Medically inaccurate claim</strong> — "Meditation cures most mental health stuff pretty easily" is false and potentially harmful. It oversimplifies complex conditions.<br><br>
+          <strong>4. Generic advice</strong> — "exercise more, eat better, reduce screen time" without context or acknowledgment of the emotional struggle is dismissive and unhelpful.<br><br>
+          <strong>5. Tone</strong> — The response lacks empathy entirely. Someone reaching out about feeling down deserves acknowledgment, not a checklist.
+        </div>
+      </div>
+      <div class="feedback-section">
+        <div class="fb-label">Key Principle</div>
+        <div class="fb-text">When a user expresses emotional distress, the AI's first job is <strong>acknowledgment and safety</strong>. Any response that dismisses feelings, makes inaccurate claims about mental health, or discourages professional help should be flagged as a serious flaw — not just a stylistic one.</div>
+      </div>
+      <div class="task-nav" style="margin-top:18px;">
+        <button class="btn btn-primary" onclick="showTask(3)">Continue to Task 3 →</button>
+      </div>
+    </div>`;
+  fb.classList.add('show');
+  document.getElementById('t2-submit').disabled = true;
+  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── TASK 3 ──
+function submitTask3() {
+  const prompt = document.getElementById('t3-prompt').value.trim();
+  const r = prompt.toLowerCase();
+  let score = 10;
+
+  const promptKeywords = [
+    ['professional', 'formal', 'tone', 'polite'],
+    ['decline', 'turn down', 'reject', 'not accept'],
+    ['bridge', 'relationship', 'future', 'connection', 'door open'],
+    ['reason', 'because', 'due to', 'other offer', 'opportunity', 'circumstances'],
+    ['subject', 'format', 'paragraph', 'sign off', 'opening', 'structure'],
+    ['specific', 'grateful', 'thank', 'appreciate'],
+    ['context', 'company', 'position', 'role', 'offer'],
+  ];
+  promptKeywords.forEach(group => {
+    if (group.some(k => r.includes(k))) score += 12;
+  });
+  if (prompt.length > 200) score += 8;
+  score = Math.min(score, 100);
+  scores[2] = score;
+
+  const tier = score >= 70 ? 'good' : score >= 45 ? 'ok' : 'bad';
+  const icon = tier === 'good' ? '✅' : tier === 'ok' ? '⚠️' : '❌';
+  const label = tier === 'good' ? 'Well-Structured Prompt' : tier === 'ok' ? 'Good Start, Missing Details' : 'Too Vague';
+
+  const fb = document.getElementById('t3-feedback');
+  fb.innerHTML = `
+    <div class="feedback-header ${tier}">${icon} ${label} <span class="score-pill">Score: ${score}/100</span></div>
+    <div class="feedback-body">
+      <div class="feedback-section">
+        <div class="fb-label">What Makes a Great Prompt</div>
+        <div class="fb-text">
+          A strong prompt answers these questions before the AI even has to ask:<br><br>
+          <strong>Context:</strong> What's the situation? (Declining a job offer from [Company], for [Role])<br>
+          <strong>Tone:</strong> How should it sound? (Professional, warm, grateful — not cold or overly apologetic)<br>
+          <strong>Goal:</strong> What's the desired outcome? (Leave the door open for future opportunities)<br>
+          <strong>Format:</strong> What structure? (Subject line + 2–3 short paragraphs + professional sign-off)<br>
+          <strong>Constraints:</strong> Any limits? (Don't reveal the competing offer's company name, keep it under 150 words)
+        </div>
+      </div>
+      <div class="feedback-section">
+        <div class="fb-label">Example of a Strong Prompt</div>
+        <div class="example-answer">"Write a professional email declining a job offer from Acme Corp for the role of Marketing Manager. I've decided to accept another offer that's a better fit for my long-term goals. The tone should be warm, grateful, and professional — I want to leave a positive impression and keep the door open for future opportunities. Include a subject line, a brief expression of gratitude, a tactful reason for declining (without mentioning the competing company), and a closing that expresses genuine appreciation for their time. Keep it under 150 words."</div>
+      </div>
+      <div class="task-nav" style="margin-top:18px;">
+        <button class="btn btn-primary" onclick="showFinal()">See Final Results →</button>
+      </div>
+    </div>`;
+  fb.classList.add('show');
+  document.getElementById('t3-submit').disabled = true;
+  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── FINAL ──
+function showFinal() {
+  document.querySelectorAll('.task').forEach(t => t.classList.remove('active'));
+  const final = document.getElementById('screen-final');
+  final.classList.add('show');
+  setProgress(4, 3);
+
+  const avg = Math.round(scores.reduce((a,b) => a+b, 0) / 3);
+  document.getElementById('score-display').textContent = avg;
+  document.getElementById('score-ring').style.setProperty('--pct', avg + '%');
+
+  let title, subtitle, tips;
+
+  if (avg >= 75) {
+    title = "You're Ready 🎯";
+    subtitle = "Strong performance across all three tasks. Your reasoning is clear and you understand what reviewers are looking for. A few refinements and you'll be in great shape for the real assessment.";
+    tips = [
+      "Always explain <em>both</em> sides — what's good about your choice AND what's bad about the other.",
+      "Use specific terminology: 'empathy,' 'accuracy,' 'relevance,' 'tone,' 'completeness.'",
+      "For prompts, always include format requirements and constraints — leave nothing to guesswork.",
+      "Take your time on the real assessment. Quality over speed, every time."
+    ];
+  } else if (avg >= 50) {
+    title = "Getting There ⚡";
+    subtitle = "You've got the instincts — now it's about articulating them more precisely. The real assessment rewards depth and specificity, not just correct conclusions.";
+    tips = [
+      "Don't just say what's better — say exactly <em>why</em>, with reference to specific parts of the text.",
+      "For flaw identification, think in categories: accuracy, tone, safety, helpfulness, completeness.",
+      "Prompts need context, tone, format, and constraints. If any are missing, add them.",
+      "Aim for 2–3x the minimum character count in your reasoning. More detail = higher scores.",
+      "Practice this assessment a few more times until your responses feel natural."
+    ];
+  } else {
+    title = "Keep Practicing 💪";
+    subtitle = "The good news: you now know exactly what the assessment is looking for. The skills here are learnable — do a few more rounds and your instincts will sharpen fast.";
+    tips = [
+      "Before selecting a response, ask: 'Would a real person find this genuinely helpful?' That's the core question.",
+      "For flaws, always check: accuracy, tone, safety, whether professional help was recommended, and whether the person's real concern was addressed.",
+      "A prompt is bad if the AI would need to ask a follow-up question. Include everything upfront.",
+      "Study the example answers in the feedback carefully — they show the level of specificity expected.",
+      "Don't rush. Slow down, re-read each task's instructions before writing anything."
+    ];
+  }
+
+  document.getElementById('final-title').textContent = title;
+  document.getElementById('final-subtitle').textContent = subtitle;
+  document.getElementById('final-tips-box').innerHTML = `
+    <div class="final-tips-title">Before You Take the Real Thing</div>
+    ${tips.map(t => `<div class="tip-item"><div class="tip-dot"></div><span>${t}</span></div>`).join('')}
+  `;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetAssessment() {
+  selectedResponse = null;
+  scores = [0, 0, 0];
+  document.querySelectorAll('textarea').forEach(ta => ta.value = '');
+  document.querySelectorAll('.char-count').forEach(c => { c.textContent = c.textContent.replace(/^\d+/, '0'); });
+  document.querySelectorAll('.feedback').forEach(f => { f.classList.remove('show'); f.innerHTML = ''; });
+  document.querySelectorAll('.btn-primary[id$="-submit"]').forEach(b => b.disabled = true);
+  document.getElementById('resp-A').classList.remove('selected');
+  document.getElementById('resp-B').classList.remove('selected');
+  document.getElementById('screen-final').classList.remove('show');
+  document.getElementById('screen-intro').style.display = 'block';
+  setProgress(0, 3);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// init
+setProgress(0, 3);
+</script>
+</body>
+</html>
