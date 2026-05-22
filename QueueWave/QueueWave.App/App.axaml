@@ -1,15 +1,81 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="QueueWave.App.App"
-             xmlns:local="using:QueueWave.App"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             xmlns:local="clr-namespace:QueueWave"
+             xmlns:conv="clr-namespace:QueueWave.Converters"
+             x:Class="QueueWave.QueueWaveApp">
+  <Application.Styles>
+    <FluentTheme/>
+    <Style Selector="Window">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
 
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
-  
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
+    <!-- Window management buttons -->
+    <Style Selector="Button.wm-btn">
+      <Setter Property="Background"    Value="Transparent"/>
+      <Setter Property="Foreground"    Value="#484960"/>
+      <Setter Property="FontSize"      Value="12"/>
+      <Setter Property="Width"         Value="22"/>
+      <Setter Property="Height"        Value="22"/>
+      <Setter Property="Padding"       Value="0"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.wm-btn:pointerover">
+      <Setter Property="Foreground" Value="#e8971e"/>
+    </Style>
+    <Style Selector="Button.wm-close:pointerover">
+      <Setter Property="Foreground" Value="#e05555"/>
+    </Style>
+
+    <!-- Playback control buttons -->
+    <Style Selector="Button.ctrl-btn">
+      <Setter Property="Background"      Value="Transparent"/>
+      <Setter Property="Foreground"      Value="#484960"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding"         Value="6,4"/>
+      <Setter Property="FontSize"        Value="14"/>
+    </Style>
+    <Style Selector="Button.ctrl-btn:pointerover">
+      <Setter Property="Foreground" Value="#ededf5"/>
+    </Style>
+    <Style Selector="Button.play-btn">
+      <Setter Property="Width"           Value="40"/>
+      <Setter Property="Height"          Value="40"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush"     Value="#e8971e"/>
+      <Setter Property="Foreground"      Value="#e8971e"/>
+      <Setter Property="CornerRadius"    Value="20"/>
+    </Style>
+    <Style Selector="Button.play-btn:pointerover">
+      <Setter Property="Background" Value="#e8971e"/>
+      <Setter Property="Foreground" Value="#000000"/>
+    </Style>
+
+    <!-- Progress slider 
+    <Style Selector="Slider.progress-slider /template/ Track">
+      <Setter Property="Background" Value="#1a1b20"/>
+    </Style>
+    <Style Selector="Slider.progress-slider /template/ Track#PART_IncreaseButton">
+      <Setter Property="Background" Value="#1a1b20"/>
+    </Style>
+    <Style Selector="Slider.progress-slider /template/ Track#PART_DecreaseButton">
+      <Setter Property="Background" Value="#e8971e"/>
+    </Style> 
+    -->
+
+    <!-- Auto toggle -->
+    <Style Selector="ToggleButton.auto-toggle">
+      <Setter Property="Background"      Value="Transparent"/>
+      <Setter Property="Foreground"      Value="#484960"/>
+      <Setter Property="BorderBrush"     Value="#222330"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding"         Value="5,3"/>
+    </Style>
+    <Style Selector="ToggleButton.auto-toggle:checked">
+      <Setter Property="Foreground"  Value="#e8971e"/>
+      <Setter Property="BorderBrush" Value="#e8971e"/>
+    </Style>
+  </Application.Styles>
+  <Application.Resources>
+  <conv:TimeSpanConverter x:Key="TimeSpanConverter"/>
+</Application.Resources>
 </Application>

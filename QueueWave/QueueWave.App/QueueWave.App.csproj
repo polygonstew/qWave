@@ -3,29 +3,19 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BuiltInComNetworkingHttpClient>true</BuiltInComNetworkingHttpClient>
+    <RootNamespace>QueueWave</RootNamespace>
   </PropertyGroup>
-
   <ItemGroup>
-    <Folder Include="Models\" />
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.0.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.2" />
-    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1">
-      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="LibVLCSharp" Version="3.9.7.1" />
-    <PackageReference Include="LibVLCSharp.Avalonia" Version="3.9.7.1" />
-    <PackageReference Include="ReactiveUI" Version="23.2.27" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+    <PackageReference Include="Avalonia"                   Version="11.*" />
+    <PackageReference Include="Avalonia.Desktop"           Version="11.*" />
+    <PackageReference Include="Avalonia.Themes.Fluent"     Version="11.*" />
+    <PackageReference Include="Avalonia.ReactiveUI"        Version="11.*" />
+    <PackageReference Include="LibVLCSharp"                Version="3.*" />
+    <PackageReference Include="LibVLCSharp.Avalonia"       Version="3.*" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows"    Version="3.*"
+                      Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="CommunityToolkit.Mvvm"      Version="8.*" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:QueueWave.ViewModels"
+        x:Class="QueueWave.Views.LibraryWindow"
+        Title="QueueWave Library"
+        Width="500" Height="600"
+        MinWidth="350" MinHeight="300"
+        CanResize="true"
+        Background="#0d0e10"
+        BorderBrush="#222330"
+        BorderThickness="1">
+
+  <Grid RowDefinitions="Auto,*" ColumnDefinitions="*">
+
+    <!-- TAB HEADERS -->
+  <Border Grid.Row="0" Background="#101114" 
+          BorderBrush="#222330" BorderThickness="0,0,0,1">
+    <StackPanel Orientation="Horizontal">
+      <Button Content="STATIONS" Padding="16,8" Classes="tab-button"/>
+      <Button Content="EPISODES" Padding="16,8" Classes="tab-button"/>
+      <Button Content="QUEUE" Padding="16,8" Classes="tab-button"/>
+    </StackPanel>
+  </Border>
+
+    <!-- CONTENT AREA (placeholder) -->
+    <TextBlock Grid.Row="1" Text="Library Panel — full implementation pending"
+               Foreground="#484960" Margin="16"
+               FontFamily="Consolas" FontSize="11"/>
+
+  </Grid>
+
+  <Window.Styles>
+    <Style Selector="Button.tab-button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#484960"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="FontFamily" Value="Consolas"/>
+      <Setter Property="FontSize" Value="10"/>
+    </Style>
+    <Style Selector="Button.tab-button:pointerover">
+      <Setter Property="Foreground" Value="#e8971e"/>
+    </Style>
+  </Window.Styles>
+
+</Window>

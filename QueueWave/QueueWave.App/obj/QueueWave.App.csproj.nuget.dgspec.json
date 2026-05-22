@@ -46,47 +46,35 @@
           "dependencies": {
             "Avalonia": {
               "target": "Package",
-              "version": "[12.0.3, )"
+              "version": "[11.*, )"
             },
             "Avalonia.Desktop": {
               "target": "Package",
-              "version": "[12.0.3, )"
-            },
-            "Avalonia.Fonts.Inter": {
-              "target": "Package",
-              "version": "[12.0.2, )"
+              "version": "[11.*, )"
             },
             "Avalonia.ReactiveUI": {
               "target": "Package",
-              "version": "[11.3.8, )"
+              "version": "[11.*, )"
             },
             "Avalonia.Themes.Fluent": {
               "target": "Package",
-              "version": "[12.0.3, )"
-            },
-            "AvaloniaUI.DiagnosticsSupport": {
-              "target": "Package",
-              "version": "[2.2.1, )"
+              "version": "[11.*, )"
             },
             "CommunityToolkit.Mvvm": {
               "target": "Package",
-              "version": "[8.4.2, )"
+              "version": "[8.*, )"
             },
             "LibVLCSharp": {
               "target": "Package",
-              "version": "[3.9.7.1, )"
+              "version": "[3.*, )"
             },
             "LibVLCSharp.Avalonia": {
               "target": "Package",
-              "version": "[3.9.7.1, )"
-            },
-            "ReactiveUI": {
-              "target": "Package",
-              "version": "[23.2.27, )"
+              "version": "[3.*, )"
             },
             "VideoLAN.LibVLC.Windows": {
               "target": "Package",
-              "version": "[3.0.23.1, )"
+              "version": "[3.*, )"
             }
           },
           "imports": [

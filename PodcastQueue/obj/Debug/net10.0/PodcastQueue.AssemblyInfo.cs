@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PodcastQueue")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+104740ebf62ef03c0ac5c2cdc252fa7151be73fb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c8721481254e4bc2c1cfc6ba4d8ed748cbef1403")]
 [assembly: System.Reflection.AssemblyProductAttribute("PodcastQueue")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PodcastQueue")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

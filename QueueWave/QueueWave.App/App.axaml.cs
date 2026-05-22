@@ -1,31 +1,25 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
-using Avalonia.Data.Core.Plugins;
-using System.Linq;
-using Avalonia.Markup.Xaml;
-using QueueWave.App.ViewModels;
-using QueueWave.App.Views;
+using QueueWave.ViewModels;
+using QueueWave.Views;
+namespace QueueWave;
 
-namespace QueueWave.App;
-
-public partial class App : Application
+public partial class QueueWaveApp : Application
 {
-    public override void Initialize()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
-
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
-        }
+            var vm  = new MainViewModel();
+            var win = new PlayerWindow { DataContext = vm };
 
+            // Wire sleep event from ViewModel to window
+            vm.SleepRequested += win.ShowBlackout;
+
+            desktop.MainWindow = win;
+            desktop.MainWindow.Loaded += async (_, _)
+                => await vm.LoadSavedStateAsync();
+        }
         base.OnFrameworkInitializationCompleted();
     }
 }

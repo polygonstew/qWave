@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:QueueWave.ViewModels"
+        x:Class="QueueWave.Views.PlayerWindow"
+        Title="QueueWave"
+        Width="460" Height="170"
+        MinWidth="380" MinHeight="170"
+        CanResize="true"
+        SystemDecorations="None"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent">
+
+  <!-- Custom dark background -->
+  <Border Background="#0d0e10" BorderBrush="#222330" BorderThickness="1"
+          CornerRadius="4">
+    <Grid RowDefinitions="28,Auto,Auto,42">
+
+      <!-- CUSTOM TITLEBAR — drag here -->
+      <Border Grid.Row="0" Background="#101114"
+              PointerPressed="TitleBar_PointerPressed"
+              Cursor="SizeAll">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="QUEUEWAVE" Foreground="#e8971e"
+                     FontFamily="Consolas" FontSize="11"
+                     FontWeight="Bold" LetterSpacing="4"
+                     VerticalAlignment="Center" Margin="10,0"/>
+          <StackPanel Grid.Column="1" Orientation="Horizontal"
+                      Margin="0,0,4,0" Spacing="2">
+            <Button Content="🞔" Classes="wm-btn" Click="LibraryToggle_Click"
+                    ToolTip.Tip="Toggle library"/>
+            <Button Content="—" Classes="wm-btn" Click="Minimize_Click"/>
+            <Button Content="×" Classes="wm-btn wm-close" Click="Close_Click"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- NOW PLAYING INFO -->
+      <Grid Grid.Row="1" ColumnDefinitions="52,*,Auto" Margin="8,6,8,4">
+        <Border Width="44" Height="44" CornerRadius="3"
+                Background="#1a1b20" ClipToBounds="True">
+          <Image Source="{Binding NowPlayingArt}"
+                 Stretch="UniformToFill"/>
+        </Border>
+        <StackPanel Grid.Column="1" Margin="8,0" VerticalAlignment="Center">
+          <TextBlock Text="{Binding NowPlayingTitle}"
+                     Foreground="#ededf5" FontSize="13" FontWeight="SemiBold"
+                     TextTrimming="CharacterEllipsis"/>
+          <TextBlock Text="{Binding NowPlayingFeed}"
+                     Foreground="#7a4e08" FontFamily="Consolas"
+                     FontSize="9" Margin="0,2,0,0"/>
+        </StackPanel>
+        <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                   Foreground="#484960" FontFamily="Consolas" FontSize="10"
+                   Text="{Binding TimeDisplay}" Margin="4,0"/>
+      </Grid>
+
+      <!-- PROGRESS BAR -->
+      <Slider Grid.Row="2" Margin="8,2,8,4"
+              Minimum="0" Maximum="1" Value="{Binding Progress}"
+              Height="6"
+              Classes="progress-slider"/>
+
+      <!-- CONTROLS -->
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto,*" Margin="6,0">
+
+        <!-- Volume + Speed left side -->
+        <StackPanel Orientation="Horizontal" Spacing="4"
+                    VerticalAlignment="Center">
+          <TextBlock Text="🔈" Foreground="#484960" FontSize="11"
+                     VerticalAlignment="Center"/>
+          <Slider Width="64" Minimum="0" Maximum="1"
+                  Value="{Binding Volume}" Classes="compact-slider"/>
+          <ComboBox SelectedValue="{Binding Speed}"
+                    FontFamily="Consolas" FontSize="9"
+                    Width="56"
+                    Padding="4,2">
+            <ComboBoxItem Content="0.75×" Tag="0.75"/>
+            <ComboBoxItem Content="1×"    Tag="1"  />
+            <ComboBoxItem Content="1.25×" Tag="1.25"/>
+            <ComboBoxItem Content="1.5×"  Tag="1.5" />
+            <ComboBoxItem Content="2×"    Tag="2"   />
+          </ComboBox>
+        </StackPanel>
+
+        <!-- Playback controls center -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                    Spacing="4" HorizontalAlignment="Center">
+          <Button Command="{Binding PrevCommand}"       Classes="ctrl-btn" Content="⏮"/>
+          <Button Command="{Binding SkipBackCommand}"   Classes="ctrl-btn"
+                  FontFamily="Consolas" FontSize="10" Content="-15"/>
+          <Button Command="{Binding PlayPauseCommand}"  Classes="ctrl-btn play-btn"
+                  Content="{Binding PlayPauseIcon}"/>
+          <Button Command="{Binding SkipForwardCommand}" Classes="ctrl-btn"
+                  FontFamily="Consolas" FontSize="10" Content="+30"/>
+          <Button Command="{Binding NextCommand}"       Classes="ctrl-btn" Content="⏭"/>
+        </StackPanel>
+
+        <!-- Sleep + Auto right side -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Spacing="4"
+                    VerticalAlignment="Center">
+          <Button Command="{Binding SleepCommand}" Classes="ctrl-btn"
+                  Content="⬛" ToolTip.Tip="Blackout / sleep screen"/>
+          <ToggleButton IsChecked="{Binding AutoAdvance}"
+                        FontFamily="Consolas" FontSize="9"
+                        Content="AUTO" Classes="auto-toggle"/>
+        </StackPanel>
+      </Grid>
+
+    </Grid>
+  </Border>
+</Window>
